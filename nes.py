@@ -1,3 +1,4 @@
+import cython
 import pyximport; pyximport.install()
 from cpu import CPU
 

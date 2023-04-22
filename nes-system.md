@@ -1,4 +1,6 @@
 ## NES Components
+#### Resources
+[NES CPU Opcodes](https://www.nesdev.org/obelisk-6502-guide/reference.html#LDA)
 
 #### NES is a distributed system, the CPU and PPU has to coordinate for games to not break. 
 

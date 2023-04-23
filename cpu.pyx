@@ -24,10 +24,12 @@ cdef class CPU:
 
     def __init__(self):
         self.accumulator = 0
-        self.instructions = np.array([hex(0xa9), hex(0x00), hex(0xaa), hex(0xe8), hex(0x00)])
+        self.program_counter = 0
+        self.instructions = np.array([hex(0xa9), hex(0xc0), hex(0xaa), hex(0xe8), hex(0x00)])
         self.status_reg = 0b0000_0000 # use only be 7 bits
         self.opcodes_map = { 
             "0xa9": self.LDA, 
+            "0x0": self.BRK
         }
    
     cdef str fetch(self):
@@ -52,16 +54,22 @@ cdef class CPU:
         else:
             self.status_reg = self.status_reg & 0b0111_1111
 
-        # print(f"Status Bit {bin(self.status_reg)}")
-        return 1 
+        #print(f"Status Bit {bin(self.status_reg)}")
+        return  
+
+    def BRK(self): 
+        """ update status register """ 
+        self.status_reg = self.status_reg | 0b0000_1000
+        return 
 
     def execute(self): 
-        for i in range(len(self.instructions)): # switch to while loop once "BREAK" is implemented
-
+        for i in range(len(self.instructions)):
             c_i = hex(int(self.fetch(), 16))
 
             self.program_counter += 1
 
             op = self.opcodes_map.get(c_i, lambda: "Invalid Opcode")()
+
+            print(c_i)
 
 

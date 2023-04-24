@@ -31,7 +31,7 @@ cdef class CPU:
             "0x0": self.BRK
         }
    
-    cdef str fetch(self):
+    cpdef str fetch(self):
         """ fetch instruction from PRG ROM """ 
         c_i = str(self.instructions[self.program_counter]) 
         return c_i
@@ -40,7 +40,7 @@ cdef class CPU:
         print(f"PC: {self.program_counter} , STATUS: {bin(self.status_reg)}")
         return 
 
-    def LDA(self):
+    cpdef LDA(self):
         self.accumulator = int(self.instructions[self.program_counter+1], 16)
         self.program_counter +=1
 
@@ -60,7 +60,7 @@ cdef class CPU:
 
         return 1
 
-    def BRK(self): 
+    cpdef BRK(self): 
         """ update status register """ 
         self.status_reg = self.status_reg | 0b0001_0000
         return 1

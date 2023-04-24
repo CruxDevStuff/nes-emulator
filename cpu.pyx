@@ -35,6 +35,10 @@ cdef class CPU:
         """ fetch instruction from PRG ROM """ 
         c_i = str(self.instructions[self.program_counter]) 
         return c_i
+    
+    def debug_status_reg(self):
+        print(f"PC: {self.program_counter} , STATUS: {bin(self.status_reg)}")
+        return 
 
     def LDA(self):
         self.accumulator = int(self.instructions[self.program_counter+1], 16)
@@ -54,25 +58,25 @@ cdef class CPU:
         else:
             self.status_reg = self.status_reg & 0b0111_1111
 
-        # print(f"Status Bit {bin(self.status_reg)}")
         return 1
 
     def BRK(self): 
         """ update status register """ 
-        self.status_reg = self.status_reg | 0b0000_1000
+        self.status_reg = self.status_reg | 0b0001_0000
         return 1
 
     def execute(self, instructions): 
         self.instructions = instructions
 
         while (True):
-
             c_i = hex(int(self.fetch(), 16))
 
             op = self.opcodes_map.get(c_i, lambda: "Invalid Opcode")()
-            #print(c_i)
+
+            # self.debug_status_reg()
+
             """ exit if end of instrutions """
-            if (self.program_counter+1 == len(instructions)):
+            if (self.program_counter+1 == len(self.instructions)):
                 break
 
             self.program_counter += 1

@@ -15,7 +15,9 @@ Emulate:
 
 cdef class CPU: 
     cdef readonly np.uint8_t accumulator 
-    cdef readonly np.uint8_t status_reg
+    cdef readonly np.uint8_t reg_status 
+    cdef readonly np.uint8_t reg_x
+
     cdef np.uint8_t program_counter
     cdef dict opcodes_map 
 
@@ -25,10 +27,13 @@ cdef class CPU:
     def __init__(self):
         self.accumulator = 0
         self.program_counter = 0
-        self.status_reg = 0b0000_0000 # use only be 7 bits
+        self.reg_x = 0
+        self.reg_status = 0b0000_0000 # use only be 7 bits
         self.opcodes_map = { 
             "0xa9": self.LDA, 
-            "0x0": self.BRK
+            "0x0": self.BRK,
+            "0xaa": self.TAX, 
+            "0xe8": self.INX
         }
    
     cpdef str fetch(self):
@@ -36,8 +41,8 @@ cdef class CPU:
         c_i = str(self.instructions[self.program_counter]) 
         return c_i
     
-    def debug_status_reg(self):
-        print(f"PC: {self.program_counter} , STATUS: {bin(self.status_reg)}")
+    def debug_reg_status(self):
+        print(f"PC: {self.program_counter} , STATUS: {bin(self.reg_status)}")
         return 
 
     cpdef LDA(self):
@@ -45,24 +50,61 @@ cdef class CPU:
         self.program_counter +=1
 
         """ update status register """
-
         # set zero flag
         if (self.accumulator == 0): 
-            self.status_reg = self.status_reg | 0b0000_0010
+            self.reg_status = self.reg_status | 0b0000_0010
         else: 
-            self.status_reg = self.status_reg & 0b1111_1101
+            self.reg_status = self.reg_status & 0b1111_1101
 
         # set negative flag 
-        if (self.accumulator & 0b1000_0000 != 0):
-            self.status_reg = self.status_reg | 0b1000_0000
+        if (self.accumulator & 0b0100_0000 != 0):
+            self.reg_status = self.reg_status | 0b0100_0000
         else:
-            self.status_reg = self.status_reg & 0b0111_1111
+            self.reg_status = self.reg_status & 0b1011_1111
+
+        return 1
+    
+    cpdef TAX(self): 
+        self.reg_x = self.accumulator
+
+        """ update status register """
+        # set zero flag
+        if (self.reg_x == 0): 
+            self.reg_status = self.reg_status | 0b0000_0010
+        else: 
+            self.reg_status = self.reg_status & 0b1111_1101
+
+        # set negative flag 
+        if (self.reg_x & 0b0100_0000 != 0):
+            self.reg_status = self.reg_status | 0b0100_0000
+        else:
+            self.reg_status = self.reg_status & 0b1011_1111
 
         return 1
 
+
+    cpdef INX(self):
+        self.reg_x += 1
+        
+        """ update status register """
+        # set zero flag
+        if (self.reg_x == 0): 
+            self.reg_status = self.reg_status | 0b0000_0010
+        else: 
+            self.reg_status = self.reg_status & 0b1111_1101
+
+        # set negative flag 
+        if (self.reg_x & 0b0100_0000 != 0):
+            self.reg_status = self.reg_status | 0b0100_0000
+        else:
+            self.reg_status = self.reg_status & 0b1011_1111
+
+        return 1
+
+
     cpdef BRK(self): 
         """ update status register """ 
-        self.status_reg = self.status_reg | 0b0001_0000
+        self.reg_status = self.reg_status | 0b0001_0000
         return 1
 
     def execute(self, instructions): 
@@ -73,7 +115,7 @@ cdef class CPU:
 
             op = self.opcodes_map.get(c_i, lambda: "Invalid Opcode")()
 
-            # self.debug_status_reg()
+            # self.debug_reg_status()
 
             """ exit if end of instrutions """
             if (self.program_counter+1 == len(self.instructions)):

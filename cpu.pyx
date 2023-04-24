@@ -14,8 +14,8 @@ Emulate:
 """
 
 cdef class CPU: 
-    cdef np.uint8_t accumulator 
-    cdef np.uint8_t status_reg
+    cdef readonly np.uint8_t accumulator 
+    cdef readonly np.uint8_t status_reg
     cdef np.uint8_t program_counter
     cdef dict opcodes_map 
 
@@ -25,7 +25,6 @@ cdef class CPU:
     def __init__(self):
         self.accumulator = 0
         self.program_counter = 0
-        self.instructions = np.array([hex(0xa9), hex(0xc0), hex(0xaa), hex(0xe8), hex(0x00)])
         self.status_reg = 0b0000_0000 # use only be 7 bits
         self.opcodes_map = { 
             "0xa9": self.LDA, 
@@ -38,7 +37,8 @@ cdef class CPU:
         return c_i
 
     def LDA(self):
-        self.accumulator = int(self.instructions[self.program_counter], 16)
+        self.accumulator = int(self.instructions[self.program_counter+1], 16)
+        self.program_counter +=1
 
         """ update status register """
 
@@ -54,22 +54,28 @@ cdef class CPU:
         else:
             self.status_reg = self.status_reg & 0b0111_1111
 
-        #print(f"Status Bit {bin(self.status_reg)}")
-        return  
+        # print(f"Status Bit {bin(self.status_reg)}")
+        return 1
 
     def BRK(self): 
         """ update status register """ 
         self.status_reg = self.status_reg | 0b0000_1000
-        return 
+        return 1
 
-    def execute(self): 
-        for i in range(len(self.instructions)):
+    def execute(self, instructions): 
+        self.instructions = instructions
+
+        while (True):
+
             c_i = hex(int(self.fetch(), 16))
+
+            op = self.opcodes_map.get(c_i, lambda: "Invalid Opcode")()
+            #print(c_i)
+            """ exit if end of instrutions """
+            if (self.program_counter+1 == len(instructions)):
+                break
 
             self.program_counter += 1
 
-            op = self.opcodes_map.get(c_i, lambda: "Invalid Opcode")()
-
-            print(c_i)
 
 
